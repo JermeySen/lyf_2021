@@ -5,4 +5,4 @@ LEFT JOIN dw.dim_sku b on a.sku_key=b.sku_key
 LEFT JOIN dw.profile_member c on a.buyer_key=c.buyer_key
 where dt>'2020-12-01'
 and a.channel_key like '%IF01_154_15'
-and a.trade_status in (3,5,8,9,-9999.-6);
+and a.trade_status in (3,5,8,9,-9999.-6);   
