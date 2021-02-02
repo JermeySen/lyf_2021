@@ -1,0 +1,47 @@
+https://github.com/JermeySen/script
+账户：123786649@qq.com
+密码：zjm.1007
+
+hue地址：
+http://10.4.0.27:8888/hue/editor?editor=83560  
+账户密码：
+zengjiamin  lyf2021
+
+调度系统地址：
+http://10.4.0.28:8080/hera/home
+账户：zengjiamin
+密码：zjm1007
+
+easyconnect
+账户：00073013
+密码：Zjm.1007
+
+xshell 远程连接hive
+地址：10.4.0.105 
+用户/密码：zengjiamin/lyf2021
+
+--  接口测试库
+10.4.0.105:3306/tianpan_service
+root
+lyf2019	
+
+--百度网盘资料
+链接: https://pan.baidu.com/s/1jgv4i2QNJQ9bRo6zSqQqZw 提取码: tdq2
+
+
+--set tez.queue.name=dw; 进入dw队列；
+-- 连接hive的认证，24小时过期。
+kinit -kt /etc/security/keytabs/hive.service.keytab hive/ambari.bi.lyf.intl@BI.LYF
+
+观远地址：http://10.18.14.149/auth/index
+账户：zengjiamin@laiyifen.com
+密码：123456
+
+tableDt=$(date -d "-1 day" +%Y%m%d)
+lastTable=$(date -d "-2 day" +%Y%m%d)
+
+
+
+
+
+
