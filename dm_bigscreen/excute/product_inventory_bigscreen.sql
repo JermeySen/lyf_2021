@@ -7,7 +7,10 @@
 --备注：统计全渠道销售额过滤线下的门店自营外卖substr(channel_key,5,6) <> _100_7
         统计全渠道销量过滤线上的app自营外卖 substr(channel_key,5,6)  <> _102_7
         销售订单的全渠道:channl source:01 直营,02 app,03 电商-ToC,04 加盟,77 ToB-销售易-团购,88 ToB-销售易-经销商
+
+修改日志: 20210222 zengjiamin  现货率近7天改成近30天。
 **/
+
 -- ****************************************总额板块
 -- 保留近30天数据
 delete from  dm.product_inventory_bigscreen
@@ -163,7 +166,7 @@ select
        ,kpi.level                                                 as sku_level
        ,sum(out_stock)  / count(distinct kpi.node_id,kpi.sku_key) as sku_level_spot_rate
 from dm.warehouse_inventory_all_kpi kpi
-where date_format(kpi.dt, 'yyyyMMdd') = date_format(date_add(current_date(),-1),'yyyyMMdd')
+where date_format(kpi.dt, 'yyyyMMdd') = date_format(date_add(current_date(),-30),'yyyyMMdd')
 and kpi.ctg_t_code <> '10103413'  -- 锁鲜装
 and substring(kpi.node_id,2,1) <> 'R' -- 排除加盟
 and kpi.node_type = 'store'
@@ -195,7 +198,7 @@ where do.shop_type = 3   -- 加盟
 and   do.record_status = 15 -- 完成
 and   do.is_deleted = 0
 and   do.is_available = 1
-and   date_format(do.out_create_time,'yyyyMMdd') >= date_format(date_add(current_date(),-7),'yyyyMMdd')
+and   date_format(do.out_create_time,'yyyyMMdd') >= date_format(date_add(current_date(),-30),'yyyyMMdd')
 and   date_format(do.out_create_time,'yyyyMMdd') <=  date_format(date_add(current_date(),-1),'yyyyMMdd')
 group by  date_format(do.out_create_time,'yyyyMMdd')
 )
