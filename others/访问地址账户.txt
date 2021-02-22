@@ -37,6 +37,9 @@ kinit -kt /etc/security/keytabs/hive.service.keytab hive/ambari.bi.lyf.intl@BI.L
 账户：zengjiamin@laiyifen.com
 密码：123456
 
+大屏需求文档地址
+https://docs.qq.com/doc/DSXZSd0Z4VmxMcGFs?pub=1&dver=2.1.0
+
 tableDt=$(date -d "-1 day" +%Y%m%d)
 lastTable=$(date -d "-2 day" +%Y%m%d)
 
