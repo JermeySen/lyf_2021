@@ -222,9 +222,9 @@ insert into  dm.ord_new_retail_analysis_bigscreen
 select * from temp.ord_nrt_result;
 
 --插入到存储格式为row format delimited fields terminated by '\u0001'，stored as TEXTFILE;
-truncate table temp.nrt_bigscreen_new_retail_analysis;
+truncate table temp.ord_new_retail_analysis_bigscreen;
 
-insert overwrite table temp.nrt_bigscreen_new_retail_analysis
+insert overwrite table temp.ord_new_retail_analysis_bigscreen
 select
  date_key
 ,date_year
