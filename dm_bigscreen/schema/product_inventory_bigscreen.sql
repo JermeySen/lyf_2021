@@ -23,6 +23,9 @@ create table dm.product_inventory_bigscreen (
 ,sku_name                    string         comment '商品名称'
 ,sku_sale_amount             decimal(20,6)  comment '商品销售额'
 ,module_tag                  int            comment '模块标识'   --1总额 2商品角色分析 3各等级商品分布及销售额贡献 4 各品类销售贡献 5新品引进  6直营门店现货率/加盟现货率   7各等级商品平均周转天数 8A等级商品销售额词云
+,total_cost_amount           decimal(20,6)  comment '成本总金额'
+,shop_cost_amount            decimal(20,6)  comment '门店成本总金额'
+,warehouse_cost_amount       decimal(20,6)  comment '仓库成本总金额'
 ) PARTITIONED BY(dt int)
 row format delimited fields terminated by '\u0001'
 stored as TEXTFILE

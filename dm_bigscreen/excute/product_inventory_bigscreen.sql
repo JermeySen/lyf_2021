@@ -8,7 +8,7 @@
         统计全渠道销量过滤线上的app自营外卖 substr(channel_key,5,6)  <> _102_7
         销售订单的全渠道:channl source:01 直营,02 app,03 电商-ToC,04 加盟,77 ToB-销售易-团购,88 ToB-销售易-经销商
 
-修改日志: 20210222 zengjiamin  现货率近7天改成近30天。
+修改日志: 20210222 zengjiamin  1.新品引进近12月 改成近30天。
 **/
 
 -- ****************************************总额板块
@@ -23,7 +23,7 @@ with  inventory as (
 select
        date_key
       ,total_inventory_amount
-      ,shop_inventory_amount
+      ,shop_inventory_amount啊
       ,warehouse_inventory_amount
       ,shop_inventory_amount / total_inventory_amount        as  shop_inventory_rate
       ,warehouse_inventory_amount / total_inventory_amount   as  warehouse_inventory_rate
@@ -54,13 +54,10 @@ from (
 ,online_sku_counts as  (  --全渠道在售sku
 select
        cast(date_format(date_add(current_date(),-1),'yyyyMMdd') as int)  as date_key
-      ,count(sku.sku_code)                                               as online_sku_counts
+      ,count(distinct sku.sku_code)                                      as online_sku_counts
 from (
      select a.sku_code from  ods.kp_scm_store_sku a
      where a.is_available = 1 and  a.is_delete = 0
-     union
-     select b.sku_code from  ods.kp_scm_channel_sku b
-     where b.is_available = 1 and  b.is_delete = 0
      ) sku
 )
 
@@ -147,14 +144,14 @@ group by sku.category_three_name
 , new_sku as (
 select
       cast(date_format(date_add(current_date(),-1),'yyyyMMdd') as int)  as date_key
-     ,date_format(mgr.actual_up_time,'yyyyMM')                          as date_month
+     ,date_format(mgr.actual_up_time,'yyyyMMdd')                        as date_month
      ,count(distinct mgr.sku_code)                                      as new_sku_counts
 from  ods.kp_scm_sku_mgr mgr
-where date_format(mgr.actual_up_time,'yyyyMM') >= date_format(add_months(date_add(current_date(),-1),-11),'yyyyMM')
+where date_format(mgr.actual_up_time,'yyyyMMdd') between date_format(date_add(current_date(),-30),'yyyyMMdd') and date_format(date_add(current_date(),-1),'yyyyMMdd')
 and  mgr.big_class= '食品'
 and  mgr.is_available = 1
 and  mgr.is_delete = 0
-group by date_format(mgr.actual_up_time,'yyyyMM')
+group by date_format(mgr.actual_up_time,'yyyyMMdd')
 )
 
 --*************************************************** 直营门店现货率/加盟现货率
@@ -166,7 +163,7 @@ select
        ,kpi.level                                                 as sku_level
        ,sum(out_stock)  / count(distinct kpi.node_id,kpi.sku_key) as sku_level_spot_rate
 from dm.warehouse_inventory_all_kpi kpi
-where date_format(kpi.dt, 'yyyyMMdd') = date_format(date_add(current_date(),-30),'yyyyMMdd')
+where date_format(kpi.dt, 'yyyyMMdd') >= date_format(date_add(current_date(),-7),'yyyyMMdd')
 and kpi.ctg_t_code <> '10103413'  -- 锁鲜装
 and substring(kpi.node_id,2,1) <> 'R' -- 排除加盟
 and kpi.node_type = 'store'
@@ -198,7 +195,7 @@ where do.shop_type = 3   -- 加盟
 and   do.record_status = 15 -- 完成
 and   do.is_deleted = 0
 and   do.is_available = 1
-and   date_format(do.out_create_time,'yyyyMMdd') >= date_format(date_add(current_date(),-30),'yyyyMMdd')
+and   date_format(do.out_create_time,'yyyyMMdd') >= date_format(date_add(current_date(),-7),'yyyyMMdd')
 and   date_format(do.out_create_time,'yyyyMMdd') <=  date_format(date_add(current_date(),-1),'yyyyMMdd')
 group by  date_format(do.out_create_time,'yyyyMMdd')
 )
