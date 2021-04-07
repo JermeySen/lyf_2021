@@ -13,7 +13,7 @@ create table dm.ord_return_sku_detail
 ,sku_name  		 	string         comment '退货商品名称'
 ,return_num      	double         comment '数量'
 ,sales_unit      	string         comment '数量单位'
-,actual_amount    	double         comment '退货额'
+,return_amount    	double         comment '退货额'
 ,apply_reason  		string         comment '退货原因'
 ,apply_reason_id    int            comment '退货原因id'
 ,return_direction   string         comment '退货去向'

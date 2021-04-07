@@ -39,4 +39,119 @@ group by  s.l2_company_code
          ,s.area_owner 
          ,a.store_key 
          ,s.store_name
-         ,a.dt
+         ,a.dt;
+--*****************************************************************************
+--  城区级数据
+select
+     d.dt            as `日期`
+    ,d.company_name  as `子公司`
+    ,d.region_owner  as `片区负责人`
+    ,d.area_owner    as `城区负责人`
+    ,count(distinct d.store_key) as `总门店数`
+    ,sum(d.sale_amount)          as `销售额`
+    ,sum(d.return_amout)         as `退货额`
+    ,sum(d.return_ordernum)      as `退货笔数`
+    ,sum(d.return_amout) / sum(d.sale_amount)   as `退货额占比`
+
+    ,count(distinct case when d.return_amout >=200 and d.return_amout<500 then d.store_key  end)                                `门店数[200-500)`
+    ,count(distinct case when d.return_amout >=200 and d.return_amout<500 then d.store_key  end) / count(distinct d.store_key)  `门店占比[200-500)`
+    ,count(distinct case when d.return_amout >=500 and d.return_amout<1000 then d.store_key end)                                `门店数[500-1000)`
+    ,count(distinct case when d.return_amout >=500 and d.return_amout<1000 then d.store_key end) / count(distinct d.store_key)  `门店占比[500-1000)`
+    ,count(distinct case when d.return_amout >=1000  then d.store_key end)                                                      `门店数>=1000`
+    ,count(distinct case when d.return_amout >=1000  then d.store_key end) / count(distinct d.store_key)                        `门店占比>=1000`
+    ,count(distinct case when d.return_ordernum >4  then d.store_key end)                                                       `门店数大于4笔`
+    ,count(distinct case when d.return_ordernum >4  then d.store_key end) / count(distinct d.store_key)                         `门店占比`
+from dm.ord_return_store_detail d
+group by d.dt,d.company_name,d.region_owner,d.area_owner
+--片区级数据
+select
+     d.dt            as `日期`
+    ,d.company_name  as `子公司`
+    ,d.region_owner  as `片区负责人`
+    ,count(distinct d.store_key) as `总门店数`
+    ,sum(d.sale_amount)          as `销售额`
+    ,sum(d.return_amout)         as `退货额`
+    ,sum(d.return_ordernum)      as `退货笔数`
+    ,sum(d.return_amout) / sum(d.sale_amount)   as `退货额占比`
+
+    ,count(distinct case when d.return_amout >=200 and d.return_amout<500 then d.store_key  end)                                `门店数[200-500)`
+    ,count(distinct case when d.return_amout >=200 and d.return_amout<500 then d.store_key  end) / count(distinct d.store_key)  `门店占比[200-500)`
+    ,count(distinct case when d.return_amout >=500 and d.return_amout<1000 then d.store_key end)                                `门店数[500-1000)`
+    ,count(distinct case when d.return_amout >=500 and d.return_amout<1000 then d.store_key end) / count(distinct d.store_key)  `门店占比[500-1000)`
+    ,count(distinct case when d.return_amout >=1000  then d.store_key end)                                                      `门店数>=1000`
+    ,count(distinct case when d.return_amout >=1000  then d.store_key end) / count(distinct d.store_key)                        `门店占比>=1000`
+    ,count(distinct case when d.return_ordernum >4  then d.store_key end)                                                       `门店数大于4笔`
+    ,count(distinct case when d.return_ordernum >4  then d.store_key end) / count(distinct d.store_key)                         `门店占比`
+from dm.ord_return_store_detail d
+group by d.dt,d.company_name,d.region_owner
+
+-- 子公司级数据
+select
+     d.dt            as `日期`
+    ,d.company_name  as `子公司`
+    ,count(distinct d.store_key) as `总门店数`
+    ,sum(d.sale_amount)          as `销售额`
+    ,sum(d.return_amout)         as `退货额`
+    ,sum(d.return_ordernum)      as `退货笔数`
+    ,sum(d.return_amout) / sum(d.sale_amount)   as `退货额占比`
+    ,count(distinct case when d.return_amout >=200 and d.return_amout<500 then d.store_key  end)                                `门店数[200-500)`
+    ,count(distinct case when d.return_amout >=200 and d.return_amout<500 then d.store_key  end) / count(distinct d.store_key)  `门店占比[200-500)`
+    ,count(distinct case when d.return_amout >=500 and d.return_amout<1000 then d.store_key end)                                `门店数[500-1000)`
+    ,count(distinct case when d.return_amout >=500 and d.return_amout<1000 then d.store_key end) / count(distinct d.store_key)  `门店占比[500-1000)`
+    ,count(distinct case when d.return_amout >=1000  then d.store_key end)                                                      `门店数>=1000`
+    ,count(distinct case when d.return_amout >=1000  then d.store_key end) / count(distinct d.store_key)                        `门店占比>=1000`
+    ,count(distinct case when d.return_ordernum >4  then d.store_key end)                                                       `门店数大于4笔`
+    ,count(distinct case when d.return_ordernum >4  then d.store_key end) / count(distinct d.store_key)                         `门店占比`
+from dm.ord_return_store_detail d
+group by d.dt,d.company_name
+--门店级数据
+select
+ dt              as `日期`
+,company_name    as `子公司`
+,region_owner    as `片区负责人`
+,area_owner   	 as `城区负责人`
+,store_key       as `门店编码`
+,store_name      as  `门店名称`
+,sale_amount     as  `销售额`
+,return_amout  	 as  `退货金额`
+,return_ordernum as  `退货笔数`
+,return_days     as  `退货天数`
+,return_ordernum_1  as `退货额[200-500)的笔数`
+,return_ordernum_2  as `退货额[200-500)的笔数`
+,return_ordernum_3  as `退货额[200-500)的笔数`
+,return_warehouse   as `退仓（金额）`
+,return_store       as `退格斗（金额）`
+from dm.ord_return_store_detail
+
+-- 门店退货明细
+select
+ dt                 as `日期`
+,company_name       as `子公司`
+,region_owner       as `片区负责人`
+,area_owner   	    as `城区负责人`
+,store_key          as `门店编码`
+,store_name         as  `门店名称`
+,creator    	    as  `操作营业员工号`
+,order_no  		  	as `退货流水号`
+,return_time        as `退货日期（日时分秒）`
+,sku_key      		as `退货商品SKU编码`
+,sku_name  		 	as `退货商品名称`
+,return_num      	as `数量`
+,sales_unit      	as `数量单位`
+,return_amount    	as `退货额`
+,apply_reason  		as `退货原因`
+,apply_reason_id    as `退货原因id`
+,return_direction   as `退货去向`
+from dm.ord_return_sku_detail
+
+-- 退货原因
+
+select
+ dt                 as `日期`
+,company_name       as `子公司`
+,region_owner       as `片区负责人`
+,area_owner   	    as `城区负责人`
+,apply_reason  		as `退货原因`
+,sum(return_amount) as `退货额`
+from dm.ord_return_sku_detail
+group by dt,company_code,company_name,region_owner,area_owner,apply_reason_id,apply_reason
