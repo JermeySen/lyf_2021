@@ -3,19 +3,21 @@
 --存储策略：每天重刷60天数据，
 --调度策略：T+1每天早上五点左右点执行 依赖执行近60天数据 调度任务号：209,252,1378
 --维度    ：门店,天
---业务范围：直营门店
+--业务范围：直营加盟门店
 --作者：zengjiamin
 --日期：20210406
  */
-
+--**********************************修改
+--日期 20210408  zengjiamin  员工工号换成员工名称
 insert overwrite table dm.ord_return_store_detail PARTITION  (dt)
 select
  s.l2_company_code
 ,s.l2_company_name
-,s.region_owner
-,s.area_owner
+,ro.cn as region_owner
+,ao.cn as area_owner
 ,a.store_key
 ,s.store_name
+,cl.channel_source_name
 ,sum(a.actual_amount) + sum(nvl(a.third_party_amount,0))                           as  sale_amount
 ,sum(case when a.trade_status = '-6' then abs(a.actual_amount) end )               as return_amount 
 ,count(distinct case when a.trade_status = '-6' then a.order_no||a.store_key end ) as  return_ordernum  
@@ -30,15 +32,20 @@ select
 from  dw.fact_trade_order a
 inner join dw.dim_channel cl on a.channel_key = cl.channel_key
 inner join dw.dim_store_daily_snapshot s on a.store_key = s.store_key and  s.dt = a.dt
+left join (select employee_number,cn from ods.zt_uc_user_employee group by employee_number,cn) ro on ro.employee_number = s.region_owner
+left join (select employee_number,cn from ods.zt_uc_user_employee group by employee_number,cn) ao on ao.employee_number = s.area_owner
 where a.dt >=  date_format(date_add(current_date(),-60),'yyyy-MM-dd')
 and   a.trade_status in  ('3','5','8','9','-9999','-6') -- 扣除退款3，5，8，9 -9999 正向-6逆向
-and   cl.channel_source = '01'  -- 直营
+and   cl.channel_source in ('01' ,'04') -- 直营  加盟
 group by  s.l2_company_code
          ,s.l2_company_name
          ,s.region_owner
-         ,s.area_owner 
+         ,ro.cn
+         ,s.area_owner
+         ,ao.cn
          ,a.store_key 
          ,s.store_name
+         ,cl.channel_source_name
          ,a.dt;
 --*****************************************************************************
 --  城区级数据

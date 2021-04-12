@@ -1,4 +1,13 @@
-
+/*
+--主题描述：会员卡
+--存储策略：每月存最后一天月累计数据
+--调度策略：T+1每天早上2点左右执行 依赖执行前一天数据 调度任务号：1363，依赖：17,27
+--维度    ：会员卡id
+--业务范围：
+--作者：zengjiamin
+--日期：20210408
+---------------------------------------------------
+*/
 set tez.queue.name = dw;
 set hive.exec.max.dynamic.partitions=1000;
 set hive.exec.max.dynamic.partitions.pernode=400;

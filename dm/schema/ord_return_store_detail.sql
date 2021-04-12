@@ -6,6 +6,7 @@ create table dm.ord_return_store_detail
 ,area_owner   		string         comment '城区负责人'
 ,store_key      	string         comment '门店编码'
 ,store_name      	string         comment '门店名称'
+,channel_source     string         comment '渠道类型'
 ,sale_amount    	double         comment '销售额'
 ,return_amout  		double     	   comment '退货额'
 ,return_ordernum    int            comment '退货笔数'
