@@ -17,39 +17,91 @@ delete from  dm.product_inventory_bigscreen
 where dt <= cast(date_format(date_add(current_date(),-30),'yyyyMMdd') as int);
 -- 删除中间临时表
 drop table if exists temp.end_result;
--- 创建查询结果表临时
 create table temp.end_result as
-with  inventory as (
+with  sale_price as (
+select
+     sku.sku_code
+    ,sku.name
+    ,max(a.scale) as scale
+    ,avg(spt.sale_price) as sale_price
+from ods.zt_ic_sku_sale_price sp
+inner join ods.zt_ic_sku_sale_price_time spt on sp.id = spt.sku_sale_price_id
+inner join ods.zt_ic_sku sku on sku.id = sp.sku_id
+inner join ods.zt_ic_sku_unit a on a.sku_id = sku.id
+                                and a.type =2
+                                and a.is_deleted = 0
+inner join (
+          select c.channel
+                ,sc.channel_code
+          from ods.zt_bdc_kp_channel c
+          inner join ods.zt_bdc_kp_channel_system_channel sc
+          on c.channel =sc.kp_channel
+          where c.channel = 'C00018'
+         ) ch  on sp.channel_code = ch.channel_code
+where   spt.end_time>='9999-12-31'
+group by  sku.sku_code,sku.name
+)
+
+,inventory as (
 select
        date_key
       ,total_inventory_amount
-      ,shop_inventory_amount啊
+      ,shop_inventory_amount
       ,warehouse_inventory_amount
       ,shop_inventory_amount / total_inventory_amount        as  shop_inventory_rate
       ,warehouse_inventory_amount / total_inventory_amount   as  warehouse_inventory_rate
+
+	  ,total_cost_amount
+	  ,shop_cost_amount
+	  ,warehouse_cost_amount
 from (
      select
-            cast(date_format(date_add(current_date(),-1),'yyyyMMdd') as int)                as date_key
-           ,sum(ssg.gross_price * (iso.jc_real_qty - iso.jc_lock_qty))         as total_inventory_amount
-           ,sum(case when wh.shop_code is not null
+            cast(date_format(date_add(current_date(),-1),'yyyyMMdd') as int)               as date_key
+
+           ,sum( sp.sale_price * ((iso.jc_real_qty - iso.jc_lock_qty) / sp.scale))         as total_inventory_amount
+           ,sum(case when  substring(wh.shop_code,2,1)  <> 'R'
+                     then sp.sale_price * ((iso.jc_real_qty - iso.jc_lock_qty) / sp.scale)
+                     end )                                                                 as shop_inventory_amount
+           ,sum(case when wh.shop_code is null
+                     then sp.sale_price * ((iso.jc_real_qty - iso.jc_lock_qty) / sp.scale)
+                     end )                                                     			   as warehouse_inventory_amount
+
+           ,sum(ssg.gross_price * (iso.jc_real_qty - iso.jc_lock_qty))         as total_cost_amount
+           ,sum(case when substring(wh.shop_code,2,1)  <> 'R'
                      then ssg.gross_price * (iso.jc_real_qty - iso.jc_lock_qty)
-                     end )                                                     as shop_inventory_amount
+                     end )                                                     as shop_cost_amount
            ,sum(case when wh.shop_code is null
                      then ssg.gross_price * (iso.jc_real_qty - iso.jc_lock_qty)
-                     end )                                                     as warehouse_inventory_amount
+                     end )                                                     as warehouse_cost_amount
+
      from dw.fact_inventory_stock_onhand  iso
-     inner join dw.dim_store_sku_grossprice_1  ssg on  iso.sku_key = ssg.sku_code
+     inner join sale_price  sp on  iso.sku_key = sp.sku_code
+	 inner join dw.dim_store_sku_grossprice_1  ssg on  iso.sku_key = ssg.sku_code
                                                    and ssg.dt =  date_format(date_add(current_date(),-1),'yyyyMMdd')
-                                                   and ssg.store_code = 'X001'        --取总仓成本价
+                                                   and ssg.store_code = 'X001'   --取总仓成本价
      inner join dw.dim_warehouse wh on wh.real_warehouse_key = iso.real_warehouse_key
      where iso.dt =  date_format(date_add(current_date(),-1),'yyyy-MM-dd')
      and   iso.is_available = 1
-     and   wh.real_warehouse_type <> 15     --虚拟仓
+     and   wh.real_warehouse_type <> 15    --虚拟仓
+     and (substring(wh.shop_code,2,1)  <> 'R' or wh.shop_code is null)
      and   wh.real_warehouse_key not in ('Z003-C001','Z003-C002','X003-A009','X005-A003','X005-A009','X005-A007',
 'X007-A009','X008-A009','X001-A009','X001-A010','X001-A011','X001-A012','X001-C007','X998-C001','X998-C002',
 'Z008-C001','Z008-C002','Z005-C001','Z005-C002','X001-C011','X051-AG02','F002-W005','H301-A001','Z013-A001',
 'X001-A001','X001-A006','X001-A013','X001-C012','X001-C010')
     ) result
+)
+
+,online_sku_counts as  (
+select
+       cast(date_format(date_add(current_date(),-1),'yyyyMMdd') as int)  as date_key
+      ,count(sku.sku_code)                                               as online_sku_counts
+from (
+     select a.sku_code from  ods.kp_scm_store_sku a
+     where a.is_available = 1 and  a.is_delete = 0
+     union
+     select b.sku_code from  ods.kp_scm_channel_sku b
+     where b.is_available = 1 and  b.is_delete = 0
+     ) sku
 )
 ,online_sku_counts as  (  --全渠道在售sku
 select
@@ -280,6 +332,9 @@ select  date_key
        ,null,null,null,null,null,null,null
        ,null,null,null,null,null,null,null,null
        ,1 as  module_tag
+	   ,total_cost_amount
+	   ,shop_cost_amount
+	   ,warehouse_cost_amount
        ,date_key as dt
 from  total_amount_module
 union all --商品角色分析
@@ -291,6 +346,7 @@ select  date_key
        ,null,null,null,null,null,null
        ,null,null,null,null,null,null
        ,2 as  module_tag
+	   ,null,null,null
        ,date_key as dt
 from  sku_role
 union all --各等级商品分布及销售额贡献
@@ -303,6 +359,7 @@ select  date_key
        ,null,null,null,null
        ,null,null,null,null,null
        ,3 as  module_tag
+	   ,null,null,null
        ,date_key as dt
 from  sku_level_sale
 union all --各品类销售贡献
@@ -313,6 +370,7 @@ select  date_key
        ,sec_categroy_sale_amounts
        ,null,null,null,null,null,null,null
        ,4 as  module_tag
+	   ,null,null,null
        ,date_key as dt
 from  thd_category_saleamount
 union all --新品引进
@@ -323,6 +381,7 @@ select  date_key
        ,new_sku_counts
        ,null,null,null,null,null
        ,5 as  module_tag
+	   ,null,null,null
        ,date_key as dt
 from  new_sku
 union all --直营门店现货率/加盟现货率
@@ -335,6 +394,7 @@ select  date_key
        ,sku_level_spot_rate
        ,null,null,null
        ,6 as  module_tag
+	   ,null,null,null
        ,date_key as dt
 from   spot_rate
 union all --各等级商品平均周转天数
@@ -347,6 +407,7 @@ select  date_key
        ,sku_level_avg_turnover_days
        ,null,null
        ,7 as  module_tag
+	   ,null,null,null
        ,date_key as dt
 from   avg_turnover_days
 union all --A等级商品销售额词云
@@ -358,10 +419,9 @@ select  date_key
        ,sku_name
        ,sku_sale_amount
        ,8 as  module_tag
+	   ,null,null,null
        ,date_key as dt
-from   sku_a_level_sale
-
-;
+from   sku_a_level_sale;
 --set tez.queue.name=dw;
 insert overwrite table dm.product_inventory_bigscreen
 select * from temp.end_result;
@@ -392,8 +452,11 @@ nvl(sku_level_spot_rate,0),
 nvl(sku_level_avg_turnover_days,0),
 nvl(sku_name,' '),
 nvl(sku_sale_amount,0),
-module_tag
-from dm.product_inventory_bigscreen where dt = date_format(date_add(current_date(),-1),'yyyyMMdd');
+module_tag,
+nvl(total_cost_amount,0),
+nvl(shop_cost_amount,0),
+nvl(warehouse_cost_amount,0)
+from  dm.product_inventory_bigscreen where dt = date_format(date_add(current_date(),-1),'yyyyMMdd');
 
 
 

@@ -9,7 +9,6 @@
 --**********************************修改
 --日期 20210408  zengjiamin  员工工号换成员工名称
  */
-
 with  reverse_order as (
 select
 a.reverse_order_no
@@ -19,7 +18,9 @@ a.reverse_order_no
 ,a.create_time
 ,a.apply_time
 ,a.reverse_order_no_out
+,b.reverse_destination
 from ods.zt_tc_reverse_order  a
+inner join ods.zt_tc_reverse_order_line  b on a.id =  b.reverse_order_id
 where a.apply_time >= date_format(date_add(current_date(),-60),'yyyy-MM-dd')
 )
 
@@ -43,7 +44,7 @@ select
 ,abs(a.actual_amount) as actual_amount
 ,o.apply_reason
 ,o.apply_reason_id
-,cast(null as string) as return_direction
+,o.reverse_destination  as return_direction
 ,from_unixtime(unix_timestamp(current_timestamp()) + 28800) as etl_updatetime
 ,a.dt
 from  dw.fact_trade_order_item a
