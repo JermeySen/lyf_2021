@@ -11,7 +11,9 @@
  */
 with  reverse_order as (
 select
+distinct
 a.reverse_order_no
+,b.sku_code
 ,a.apply_reason
 ,a.apply_reason_id
 ,a.creator
@@ -39,7 +41,7 @@ select
 ,o.apply_time
 ,a.sku_key
 ,sku.name
-,abs(a.item_out_num)  as item_out_num
+,abs(a.sku_quantity)  as sku_quantity
 ,a.sales_unit
 ,abs(a.actual_amount) as actual_amount
 ,o.apply_reason
@@ -49,7 +51,7 @@ select
 ,a.dt
 from  dw.fact_trade_order_item a
 inner join dw.dim_channel cl on a.channel_key = cl.channel_key
-inner join reverse_order o   on a.order_no  = o.reverse_order_no
+inner join reverse_order o   on a.order_no  = o.reverse_order_no and a.sku_key = o.sku_code
 inner join dw.dim_sku sku    on sku.sku_key = a.sku_key
 inner join dw.dim_store_daily_snapshot s on a.store_key = s.store_key and  s.dt = a.dt
 left join (select employee_number,cn from ods.zt_uc_user_employee group by employee_number,cn) ro on ro.employee_number = s.region_owner

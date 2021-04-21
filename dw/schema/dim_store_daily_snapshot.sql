@@ -30,5 +30,6 @@ CREATE TABLE `dw.dim_store_daily_snapshot`(
   `province_code` string COMMENT '省份编码(isms)',
   `city_code` string COMMENT '城市编码(isms)',
   `area_code` string COMMENT '区域编码(isms)',
+  `is_open`   int    COMMENT '是否营业',
    dt         string COMMENT '快照日期yyyy-MM-dd'
   )

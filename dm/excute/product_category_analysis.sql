@@ -29,8 +29,10 @@ with inventory as (
           ,count(distinct case when nvl(xg_real_qty,0) - nvl(xg_lock_qty,0) > 0  and substring(wh.shop_code,2,1)  <> 'R' then wh.shop_code end ) as have_sku_store_num
      from dw.fact_inventory_stock_onhand  iso
      inner join dw.dim_warehouse wh on wh.real_warehouse_key = iso.real_warehouse_key
+     inner join dw.dim_store_daily_snapshot st on st.store_key = wh.shop_code and st.dt = date_format(date_add(current_date(),-1),'yyyy-MM-dd')
      where iso.dt =  date_format(date_add(current_date(),-1),'yyyy-MM-dd')
      and   iso.is_available = 1
+     and   st.is_open = 1
      and (substring(wh.shop_code,2,1)  <> 'R' or substring_index(wh.real_warehouse_key,'-',-1) in ('C001','C008','A008','C003'))
      group by iso.dt, iso.sku_key
 )
@@ -44,13 +46,15 @@ with inventory as (
       left join (
                     select
                            oi.sku_key
-                          ,sum(oi.jc_sku_quantity) / 28    as  sale_28qty  --是否除28 还是消售天数
+                          ,sum(oi.jc_sku_quantity) / 28    as  sale_28qty
                     from dw.fact_trade_order_item oi
+                    inner join dw.dim_store_daily_snapshot st on st.store_key = oi.store_key and st.dt = date_format(date_add(current_date(),-1),'yyyy-MM-dd')
                     inner join dw.dim_channel cl on oi.channel_key = cl.channel_key
                     where oi.date_key >=  date_format(date_add(current_date(),-28),'yyyyMMdd')     -- 支付时间
                     and   oi.dt > date_format(date_add(current_date(),-60),'yyyy-MM-dd')
                     and   oi.trade_status in  (3,5,8,9,-9999,-6)
                     and   cl.channel_source = '01'  -- 直营
+                    and   st.is_open = 1  --正常营业门店
                     and   substring(oi.store_key,2,1) <> 'R'
                     group by oi.sku_key
                 ) qty on ivt.sku_key = qty.sku_key
@@ -62,9 +66,11 @@ with inventory as (
                     ,kpi.sku_key                                               as sku_key
                     ,sum(out_stock)  / count(distinct kpi.node_id,kpi.sku_key) as sku_spot_rate
                from dm.warehouse_inventory_all_kpi kpi
+               inner join dw.dim_store_daily_snapshot st on st.store_key = kpi.node_id and st.dt = date_format(date_add(current_date(),-1),'yyyy-MM-dd')
                where kpi.dt =  date_format(date_add(current_date(),-1),'yyyy-MM-dd')
                 and substring(kpi.node_id,2,1) <> 'R' -- 排除加盟
                 and kpi.node_type = 'store'
+                and st.is_open = 1
                 group by  kpi.dt ,kpi.sku_key
 )
 
@@ -121,9 +127,11 @@ from (
            sku.sku_code                     as sku_key
           ,count(distinct sku.store_code)   as sku_store_num
       from  ods.kp_scm_store_sku sku
+      inner join dw.dim_store_daily_snapshot st on st.store_key = sku.store_code and st.dt = date_format(date_add(current_date(),-1),'yyyy-MM-dd')
       where sku.is_available = 1
       and   sku.is_delete = 0
       and   substring(sku.store_code,2,1) <> 'R'
+      and   st.is_open = 1
       group by sku.sku_code
      ) kp_sku
 inner join dw.dim_sku sku    on kp_sku.sku_key = sku.sku_key

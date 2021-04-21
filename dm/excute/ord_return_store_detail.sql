@@ -13,8 +13,8 @@ with  reverse_order as (
 select
      date_format(a.apply_time,'yyyy-MM-dd')                                as dt
     ,shop_code                                                             as store_key
-    ,sum(case when b.reverse_destination ='退格斗' then actual_amount end) as  return_store
-    ,sum(case when b.reverse_destination ='退仓'   then actual_amount end) as  return_warehouse
+    ,sum(case when b.reverse_destination ='退格斗' then b.actual_amount end) as  return_store
+    ,sum(case when b.reverse_destination ='退仓'   then b.actual_amount end) as  return_warehouse
 from ods.zt_tc_reverse_order  a
 inner join ods.zt_tc_reverse_order_line  b on a.id =  b.reverse_order_id
 inner join dw.dim_channel cl               on  a.channel_code||'_'||a.trade_type = cl.channel_key
