@@ -6,6 +6,7 @@
 --日期：20210113
 --表依赖：dw.fact_trade_order_item ，dw.dim_channel，ods.zt_tc_order_line
 --备注:因hive同步mysql 必须给默认值，所以如果默认-9999 代表null，接口判断不显示。
+--修改  zengjiamin   20210422  社团核销只算门店直营线下数据
 **/
 -- 保留近30天数据
 delete from  dm.ord_new_retail_analysis_bigscreen
@@ -24,8 +25,8 @@ select
      ,oi.date_key                 as date_day
      ,substr(oi.date_key , 0 ,4)  as year
      ,sum( actual_amount )        as sale_amount -- 扣除退款
-     ,sum(case when oi.is_community_corps = 1              then actual_amount else 0 end) as community_sale_amount
-     ,count(distinct case when oi.is_community_corps = 1   then oi.buyer_key  end)        as pay_user_numbers
+     ,sum(case when oi.is_community_corps = 1  and cl.channel_source in('01','04')  then actual_amount else 0 end) as community_sale_amount
+     ,count(distinct case when oi.is_community_corps = 1 and cl.channel_source in('01','04')   then oi.buyer_key  end)        as pay_user_numbers
      ,sum(case when cl.channel_type = '102'                then actual_amount else 0 end) as app_sale_amount
      ,sum(case when cl.channel_type in ('101','103','121') then actual_amount else 0 end) as other_sale_amount
      ,sum(case when cl.channel_type = '102' and  trade_status in  ('3','5','8','9','-9999')
@@ -36,13 +37,14 @@ select
                           then oi.order_no||oi.store_key  end)                                     as app_order_numbers
      ,count(distinct case when trade_status in  ('3','5','8','9','-9999') and cl.channel_type in ('101','103','121')
                           then oi.order_no||oi.store_key end)                                     as other_order_numbers
-from dw.fact_trade_order_item oi
+from dw.fact_trade_order oi
 inner join dw.dim_channel cl on oi.channel_key = cl.channel_key
 where (oi.date_key between date_format(date_add(current_date(),-30),'yyyyMMdd')  and  date_format(date_add(current_date(),-1),'yyyyMMdd')
 or     oi.date_key between date_format(date_add(add_months(current_date(),-12),-30),'yyyyMMdd')  and  date_format(date_add(add_months(current_date(),-12),-1),'yyyyMMdd')) -- 支付时间
 and   trade_status in  ('3','5','8','9','-9999','-6')  -- 扣除退款3，5，8，9 -9999 正向-6逆向
 and   cl.channel_source in ('01','02','03','04','77','78') -- 全渠道
 and   substr(oi.channel_key,5,6) <> '_100_7' -- 排除门店自营外卖 ，--102_7 app自营外卖
+and   oi.order_business_type IN (0,1,2)   -- 排除虚拟
 group by oi.date_key,substr(oi.date_key ,0 ,4)
 )
 -- 连带购买人数
@@ -52,18 +54,20 @@ select
         ,count(distinct buyer_key)                            as related_buyers
 from (
       select oi.buyer_key
-      from  dw.fact_trade_order_item oi
+      from  dw.fact_trade_order oi
       inner join dw.dim_channel cl on oi.channel_key = cl.channel_key
       where oi.is_community_corps = 1
       and   oi.date_key =  date_format(date_add(current_date(),-1),'yyyyMMdd')
       and   oi.trade_status in  ('3','5','8','9','-9999','-6')
+      and   cl.channel_source in('01','04')
       intersect
       select oi.buyer_key
-      from  dw.fact_trade_order_item oi
+      from  dw.fact_trade_order oi
       inner join dw.dim_channel cl on oi.channel_key = cl.channel_key
       where oi.is_community_corps = 0
       and   oi.date_key =  date_format(date_add(current_date(),-1),'yyyyMMdd')
       and   oi.trade_status in  ('3','5','8','9','-9999','-6')
+      and cl.channel_source in('01','04')
      ) T
 )
 
@@ -112,7 +116,7 @@ from (
           and   ol.ext_data like '%room%'
           and   ol.dt >=  date_format(date_add(current_date(),-30),'yyyy-MM-dd')
           ) broadcast
-     inner join  dw.fact_trade_order_item oi  on substr(oi.order_store_no,0,16) = broadcast.id
+     inner join  dw.fact_trade_order oi  on substr(oi.order_store_no,0,16) = broadcast.id
      where       oi.date_key between date_format(date_add(current_date(),-30),'yyyyMMdd')  and  date_format(date_add(current_date(),-1),'yyyyMMdd')
      and         oi.dt >= date_format(date_add(current_date(),-30),'yyyy-MM-dd')
      group by    oi.date_key

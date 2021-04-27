@@ -5,43 +5,47 @@
 --存储策略：按天分区，
 --调度策略：T+1每天早上五点左右点执行 ，任务号1394，依赖执行的调度任务号：209,252,1378
 --维度    ：sku,天
---业务范围：直营sku
+--业务范围：直营正常营业门店sku,
 --作者：zengjiamin
 --日期：20210416
  */
 --**********************************修改
 with inventory as (
      select
-           iso.dt                                                                                        as date_key
+           iso.dt                                                                                           as date_key
           ,iso.sku_key
-          ,sum(case when  substring(wh.shop_code,2,1)  <> 'R'
-                 then  nvl(jc_real_qty,0) - nvl(jc_lock_qty,0) end)                                      as store_jc_inventory
+          ,sum(case when   substring(st.store_key,2,1)  <> 'R' and st.store_key is not null
+                    then  nvl(jc_real_qty,0) - nvl(jc_lock_qty,0) end)                                      as store_jc_inventory
           ,sum(case when   substring_index(wh.real_warehouse_key,'-',-1) in ('C001','C008','A008','C003')
-                then   nvl(jc_real_qty,0) - nvl(jc_lock_qty,0)  end)                                     as warehouse_jc_inventory
-          ,sum(iso.jc_onroad_qty)                                                                        as onload_jc_inventory
+                    then   nvl(jc_real_qty,0) - nvl(jc_lock_qty,0)  end)                                    as warehouse_jc_inventory
+          ,sum(case when  substring(st.store_key,2,1)  <> 'R' and st.store_key is not null
+                    then  nvl(iso.jc_onroad_qty,0) end)                                                      as onload_jc_inventory
 
-          ,sum(case when  substring(wh.shop_code,2,1)  <> 'R'
-                 then  nvl(xg_real_qty,0) - nvl(xg_lock_qty,0) end)                                      as store_xg_inventory
+          ,sum(case when  substring(st.store_key,2,1)  <> 'R' and st.store_key is not null
+                    then  nvl(xg_real_qty,0) - nvl(xg_lock_qty,0) end)                                      as store_xg_inventory
           ,sum(case when   substring_index(wh.real_warehouse_key,'-',-1) in ('C001','C008','A008','C003')
-                then   nvl(xg_real_qty,0) - nvl(xg_lock_qty,0)  end)                                     as warehouse_xg_inventory
-          ,sum(iso.xg_onroad_qty)                                                                        as onload_xg_inventory
-          ,count(distinct case when iso.xg_onroad_qty > 0  and substring(wh.shop_code,2,1)  <> 'R'  then wh.shop_code end )                      as on_load_store_num
-          ,count(distinct case when nvl(xg_real_qty,0) - nvl(xg_lock_qty,0) > 0  and substring(wh.shop_code,2,1)  <> 'R' then wh.shop_code end ) as have_sku_store_num
+                    then   nvl(xg_real_qty,0) - nvl(xg_lock_qty,0)  end)                                    as warehouse_xg_inventory
+          ,sum(case when  substring(st.store_key,2,1)  <> 'R' and st.store_key is not null
+                    then  nvl(iso.xg_onroad_qty,0) end)                                                      as onload_xg_inventory
+          ,count(distinct case when iso.xg_onroad_qty > 0  and substring(wh.shop_code,2,1)  <> 'R'
+                                                           and st.store_key is not null  then wh.shop_code end )                      as on_load_store_num
+          ,count(distinct case when nvl(xg_real_qty,0) - nvl(xg_lock_qty,0) > 0  and substring(wh.shop_code,2,1)  <> 'R'
+                                                                                 and st.store_key is not null then wh.shop_code end ) as have_sku_store_num
      from dw.fact_inventory_stock_onhand  iso
      inner join dw.dim_warehouse wh on wh.real_warehouse_key = iso.real_warehouse_key
-     inner join dw.dim_store_daily_snapshot st on st.store_key = wh.shop_code and st.dt = date_format(date_add(current_date(),-1),'yyyy-MM-dd')
+     left join dw.dim_store_daily_snapshot st on st.store_key = wh.shop_code and st.dt = date_format(date_add(current_date(),-1),'yyyy-MM-dd')
+                                               and st.is_open = 1 -- 正常营业门店
      where iso.dt =  date_format(date_add(current_date(),-1),'yyyy-MM-dd')
      and   iso.is_available = 1
-     and   st.is_open = 1
-     and (substring(wh.shop_code,2,1)  <> 'R' or substring_index(wh.real_warehouse_key,'-',-1) in ('C001','C008','A008','C003'))
+     and ((substring(st.store_key,2,1)  <> 'R' and st.store_key is not null) or substring_index(wh.real_warehouse_key,'-',-1) in ('C001','C008','A008','C003'))
      group by iso.dt, iso.sku_key
 )
 
 ,  turnover_days as (
       select
              ivt.sku_key
-            ,(ivt.store_jc_inventory + ivt.warehouse_jc_inventory) / qty.sale_28qty                            as sku_turnover_days
-            ,(ivt.store_jc_inventory + ivt.warehouse_jc_inventory + ivt.onload_jc_inventory) / qty.sale_28qty  as sku_onload_turnover_days
+            ,(nvl(ivt.store_jc_inventory,0.0) + nvl(ivt.warehouse_jc_inventory,0.0)) / qty.sale_28qty                            as sku_turnover_days
+            ,(nvl(ivt.store_jc_inventory,0.0) + nvl(ivt.warehouse_jc_inventory,0.0) + nvl(ivt.onload_jc_inventory,0.0)) / qty.sale_28qty  as sku_onload_turnover_days
       from inventory ivt
       left join (
                     select
@@ -145,5 +149,6 @@ left  join (
                       sku_key
                      ,sku_x_sale_level
                 from  temp.ml_sku_x_28days_abcd_level
-                where dim_id = 1  -- 全渠道
+                where dim_id = 3  -- 渠道分类
+                and   three_level_code = '01'
             ) sl   on kp_sku.sku_key = sl.sku_key

@@ -36,9 +36,9 @@ inner join (
           from ods.zt_bdc_kp_channel c
           inner join ods.zt_bdc_kp_channel_system_channel sc
           on c.channel =sc.kp_channel
-          where c.channel = 'C00018'
+          where c.channel = 'C00018' -- 到店直营
          ) ch  on sp.channel_code = ch.channel_code
-where   spt.end_time>='9999-12-31'
+where   spt.end_time>='9999-12-31' --最近销售价
 group by  sku.sku_code,sku.name
 )
 
@@ -62,7 +62,7 @@ from (
            ,sum(case when  substring(wh.shop_code,2,1)  <> 'R'
                      then sp.sale_price * ((iso.jc_real_qty - iso.jc_lock_qty) / sp.scale)
                      end )                                                                 as shop_inventory_amount
-           ,sum(case when wh.shop_code is null
+           ,sum(case when owh.real_warehouse_key is not null
                      then sp.sale_price * ((iso.jc_real_qty - iso.jc_lock_qty) / sp.scale)
                      end )                                                     			   as warehouse_inventory_amount
 
@@ -70,7 +70,7 @@ from (
            ,sum(case when substring(wh.shop_code,2,1)  <> 'R'
                      then ssg.gross_price * (iso.jc_real_qty - iso.jc_lock_qty)
                      end )                                                     as shop_cost_amount
-           ,sum(case when wh.shop_code is null
+           ,sum(case when owh.real_warehouse_key is not null
                      then ssg.gross_price * (iso.jc_real_qty - iso.jc_lock_qty)
                      end )                                                     as warehouse_cost_amount
 
@@ -80,14 +80,11 @@ from (
                                                    and ssg.dt =  date_format(date_add(current_date(),-1),'yyyyMMdd')
                                                    and ssg.store_code = 'X001'   --取总仓成本价
      inner join dw.dim_warehouse wh on wh.real_warehouse_key = iso.real_warehouse_key
+     left  join temp.outwarehouse_0423 owh on owh.real_warehouse_key = iso.real_warehouse_key  -- 只计算切了中台仓库的库存
      where iso.dt =  date_format(date_add(current_date(),-1),'yyyy-MM-dd')
      and   iso.is_available = 1
-     and   wh.real_warehouse_type <> 15    --虚拟仓
-     and (substring(wh.shop_code,2,1)  <> 'R' or wh.shop_code is null)
-     and   wh.real_warehouse_key not in ('Z003-C001','Z003-C002','X003-A009','X005-A003','X005-A009','X005-A007',
-'X007-A009','X008-A009','X001-A009','X001-A010','X001-A011','X001-A012','X001-C007','X998-C001','X998-C002',
-'Z008-C001','Z008-C002','Z005-C001','Z005-C002','X001-C011','X051-AG02','F002-W005','H301-A001','Z013-A001',
-'X001-A001','X001-A006','X001-A013','X001-C012','X001-C010')
+--      and   wh.real_warehouse_type <> 15    --虚拟仓
+     and (substring(wh.shop_code,2,1)  <> 'R' or owh.real_warehouse_key is not null)
     ) result
 )
 
@@ -269,13 +266,15 @@ from (
                  ,sum(iso.jc_real_qty-iso.jc_lock_qty)   inventory
              from  dw.fact_inventory_stock_onhand iso  --*********************过滤条件同 1
              inner join dw.dim_warehouse wh on wh.real_warehouse_key = iso.real_warehouse_key
+             left  join temp.outwarehouse_0423 owh on owh.real_warehouse_key = iso.real_warehouse_key  -- 只计算切了中台仓库的库存
              where iso.dt = date_format(date_add(current_date(),-1),'yyyy-MM-dd')
              and   iso.is_available = 1
-             and   wh.real_warehouse_type <> 15     --虚拟仓
-             and   wh.real_warehouse_key not in ('Z003-C001','Z003-C002','X003-A009','X005-A003','X005-A009','X005-A007',
-'X007-A009','X008-A009','X001-A009','X001-A010','X001-A011','X001-A012','X001-C007','X998-C001','X998-C002',
-'Z008-C001','Z008-C002','Z005-C001','Z005-C002','X001-C011','X051-AG02','F002-W005','H301-A001','Z013-A001',
-'X001-A001','X001-A006','X001-A013','X001-C012','X001-C010')
+             and (substring(wh.shop_code,2,1)  <> 'R' or owh.real_warehouse_key is not null)
+--              and   wh.real_warehouse_type <> 15     --虚拟仓
+--              and   wh.real_warehouse_key not in ('Z003-C001','Z003-C002','X003-A009','X005-A003','X005-A009','X005-A007',
+-- 'X007-A009','X008-A009','X001-A009','X001-A010','X001-A011','X001-A012','X001-C007','X998-C001','X998-C002',
+-- 'Z008-C001','Z008-C002','Z005-C001','Z005-C002','X001-C011','X051-AG02','F002-W005','H301-A001','Z013-A001',
+-- 'X001-A001','X001-A006','X001-A013','X001-C012','X001-C010')
              group by iso.sku_key
              )  ivt
         left join (

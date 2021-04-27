@@ -59,5 +59,6 @@ left join (select employee_number,cn from ods.zt_uc_user_employee group by emplo
 where a.dt >=  date_format(date_add(current_date(),-60),'yyyy-MM-dd')
 and   a.trade_status='-6' -- 退货
 and   cl.channel_source in ('01' ,'04') -- 直营  加盟
+and   sku.sku_key not in (select * from dw.dim_sku_special_sort where category_id = '3001')  -- 排除伞类型的sku
 ;
 
