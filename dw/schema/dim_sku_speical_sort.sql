@@ -4,6 +4,8 @@ create table dw.dim_sku_special_sort
 ,sku_name         string     comment 'sku'
 ,category_id      int        comment '类目id 2001 咖啡   1001 酒'
 ,category_name    string     comment '类目名称'
+,work_type_id     string     comment '作用id'
+,work_type_name   string     comment '作用名称'
 ,etl_updatetime   timestamp  comment 'etl_最后更新时间'
 )
 
@@ -24,6 +26,8 @@ select
 ,'20314'
 ,'20315'
 ,'20316') then '咖啡' else '酒' end
+, '1'
+,'门店营业员业绩报表'
 ,current_date()
 from dw.dim_sku sku
 where sku.sku_key in

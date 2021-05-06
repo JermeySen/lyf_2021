@@ -100,7 +100,7 @@ select
 from (
     select
        date_format(io.actual_start_time,'yyyyMMdd') as date_day
-      ,count(distinct io.number)                   as broadcast_numbers
+      ,count(distinct io.number)                    as broadcast_numbers
     from ods.xt_live_live_info  io
     where  date_format(io.actual_start_time,'yyyy-MM-dd') >=  date_format(date_add(current_date(),-30),'yyyy-MM-dd')
     and   io.is_delete = 0
