@@ -1,7 +1,7 @@
 drop table if exists dm.store_group_sale_analysis
 create table dm.store_group_sale_analysis
 (
- id                      string         comment '支付日期+门店 202104201U70'
+ id                      string         comment '反转(支付日期+门店 202104201U70)'
 ,pay_date	             string         comment '支付日期'
 ,store_key  	         string         comment '销售门店编码'
 ,introducer	             string         comment '介绍人员工号'

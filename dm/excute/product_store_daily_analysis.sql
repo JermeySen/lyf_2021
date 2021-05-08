@@ -1,3 +1,12 @@
+/*
+--主题描述：单天单店单品（分业务类型）
+--存储策略：按天分区，
+--调度策略：T+1每天早上八点30执行 ，任务号1408，依赖执行的调度任务号：209,252,912,1378,1116,994
+--维度    ：sku，业务类型,天，门店
+--业务范围：直营加盟门店,
+--作者：zengjiamin
+--日期：20210508
+ */
 --left  join  dw.dim_sku_special_sort st on st.sku_key = oi.sku_key and st.work_type_id = '1'
 --inner join dw.dim_sku sku    on sku.sku_key    = oi.sku_key
 --社区团：实收对应线上，应收线下

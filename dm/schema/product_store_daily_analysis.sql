@@ -16,7 +16,7 @@ CREATE TABLE `dm.product_store_daily_analysis`(
 `franchisee_code`  string COMMENT '加盟商编码',
 `franchisee_name`  string COMMENT '加盟商名称',
 `business_code`  string COMMENT '业务类型编码',
-`business_name`  string COMMENT '业务类型名称(来伊份APP外卖/第三方外卖/社区团/会员扫码/同城生活/门店团购/地推)',
+`business_name`  string COMMENT '业务类型名称',
 `spu_code`       string COMMENT 'spu编码',
 `spu_type`       string COMMENT 'spu类型',
 `sku_code`       string COMMENT 'sku编码',
@@ -61,60 +61,3 @@ PARTITIONED BY (
 `dt` string COMMENT '按支付日期，每天一个分区，格式：yyyy-MM-dd')
 ;
 
-       su.sku_key||su.business_code||su.store_key||su.pay_date            as  id
-      ,su.store_key
-      ,dst.store_name
-      ,case when substring(su.store_key,2,1) = 'R' then '加盟' else '直营'    end
-      ,cast(case when dst.is_open is null then -1 else dst.is_open end as string)
-      ,dst.l2_company_code
-      ,dst.l2_company_name
-      ,aa.province_code
-      ,aa.province_name
-      ,aa.city_code
-      ,aa.city_name
-      ,aa.area_key
-      ,aa.area_name
-      ,dst.franchisee
-      ,dst.franchisee_name
-      ,su.business_code
-      ,su.business_name
-      ,sku.spu_code
-      ,sku.spu_type
-      ,sku.sku_key
-      ,sku.name
-      ,sta.sku_status
-      ,sku.second_material_code
-      ,sku.second_material_name
-      ,cast(sku.brand_id as string) as brand_id
-      ,sku.brand_name
-      ,sl.sku_x_sale_level          as sku_xg_sale_level
-      ,sl.sku_sale_amt_level        as sku_sale_amt_level
-      ,cast(su.is_gift as string)   as is_gift
-      ,sku.category_one_code
-      ,sku.category_one_name
-      ,sku.category_two_code
-      ,sku.category_two_name
-      ,sku.category_three_code
-      ,sku.category_three_name
-      ,sku.category_four_code
-      ,sku.category_four_name
-      ,su.pay_date
-      ,su.sales_amt_no_discount
-      ,su.sales_amt
-      ,su.sales_amt_discount
-      ,su.sales_amt_no_discount_refund
-      ,su.sales_amt_refund
-      ,su.jc_unit
-      ,su.jc_sale_sku_qty
-      ,su.jc_sale_sku_r_qty
-      ,su.sales_unit
-      ,su.xs_sale_sku_qty
-      ,su.xs_sale_sku_r_qty
-      ,sc.unit_name                    as xg_unit
-      ,su.jc_sale_sku_qty   / sc.scale as xg_sale_sku_qty
-      ,su.jc_sale_sku_r_qty / sc.scale as xg_sale_sku_r_qty
-      ,su.sales_ord_cnt
-      ,su.sales_ord_cnt_refund
-      ,nvl(su.sales_ord_cnt,0) + nvl(su.sales_ord_cnt_refund,0)  as passenger_flow
-      ,su.etl_updatetime
-      --,su.dt
