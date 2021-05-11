@@ -32,6 +32,7 @@ TBLPROPERTIES("hbase.table.name" = "ns_olap:store_product_sale_analysis");
 -- STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
 -- WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,cf:pay_date,cf:store_key,cf:channel_type,cf:channel_type_name,cf:sku_key,cf:receive_amt,cf:actual_amt,cf:return_receive_amt,cf:return_actual_amt,cf:pay_sku_amt,cf:return_sku_amt,cf:sale_unit")
 -- TBLPROPERTIES("hbase.table.name" = "ns_olap:store_product_sale_analysis");
+-- temp.result_amt_0508 有0301到0507的历史数据
 
 
 

@@ -40,10 +40,51 @@ and   oi.dt >= date_format(date_add(current_date(),-10),'yyyy-MM-dd')
 and   trade_status in  ('3','5','8','9','-9999','-6')  -- 扣除退款3，5，8，9 -9999 正向-6逆向
 and   cl.channel_source in ('01','04') -- 直营 , 加盟
 and   oi.order_business_type in (0,1,2)  -- 排除虚拟单
+and   cl.channel_type <> '102'
 group by date_format(oi.payment_time,'yyyyMMdd')
         ,oi.store_key
         ,case when oi.is_community_corps = 1 then '9100'   else  cl.channel_type       end
         ,case when oi.is_community_corps = 1 then '社团核销'else  cl.channel_type_name  end
+        ,oi.sku_key
+        ,oi.sales_unit
+        ,oi.jc_unit
+        ,oi.is_gift
+        ,date_format(oi.payment_time,'yyyy-MM-dd')
+union all  -- 线上app外卖
+select
+         oi.store_key
+        , cl.channel_type
+        , cl.channel_type_name
+        ,oi.sku_key
+        ,oi.sales_unit
+        ,oi.jc_unit
+        ,oi.is_gift
+        ,date_format(oi.payment_time,'yyyyMMdd')                                                  as pay_date
+        ,sum(oi.price * oi.sku_quantity)                                                          as sales_amt_no_discount
+        ,sum(actual_amount)                                                                       as sales_amt
+        ,sum(oi.discount_amout)                                                                   as sales_amt_discount
+        ,sum(case when trade_status  = '-6'  then oi.price * oi.sku_quantity end)                 as sales_amt_refund
+        ,sum(case when trade_status  = '-6'  then oi.actual_amount end)                           as sales_amt_no_discount_refund
+        ,sum( case when trade_status in ('3','5','8','9','-9999')  then oi.jc_sku_quantity end)   as jc_sale_sku_qty
+        ,sum( case when trade_status   = '-6'  then oi.jc_sku_quantity end)                       as jc_sale_sku_r_qty
+        ,sum( case when trade_status in ('3','5','8','9','-9999')  then oi.sku_quantity end)      as xs_sale_sku_qty
+        ,sum( case when trade_status  ='-6' then oi.sku_quantity end)                             as xs_sale_sku_r_qty
+        ,count(distinct case when trade_status in ('3','5','8','9','-9999')  then oi.order_store_no end )  as sales_ord_cnt
+        ,count(distinct case when trade_status   = '-6'  then oi.order_store_no end )                      as sales_ord_cnt_refund
+        ,from_unixtime(unix_timestamp(current_timestamp()) + 28800)                               as etl_updatetime
+        ,date_format(oi.payment_time,'yyyy-MM-dd')                                                as dt
+from dw.fact_trade_order_item oi
+inner join dw.dim_channel cl on oi.channel_key = cl.channel_key
+where date_format(oi.payment_time,'yyyy-MM-dd') = date_format(date_add(current_date(),-1),'yyyy-MM-dd')
+and   oi.dt >= date_format(date_add(current_date(),-10),'yyyy-MM-dd')
+and   trade_status in  ('3','5','8','9','-9999','-6')  -- 扣除退款3，5，8，9 -9999 正向-6逆向
+and   cl.channel_source ='02' --外卖
+and   oi.order_business_type in (0,1,2)  -- 排除虚拟单
+and   cl.channel_type = '102' -- app外卖
+group by date_format(oi.payment_time,'yyyyMMdd')
+        ,oi.store_key
+        , cl.channel_type
+        , cl.channel_type_name
         ,oi.sku_key
         ,oi.sales_unit
         ,oi.jc_unit
@@ -153,17 +194,17 @@ select
       ,su.sales_amt_no_discount
       ,su.sales_amt
       ,su.sales_amt_discount
-      ,su.sales_amt_no_discount_refund
-      ,su.sales_amt_refund
+      ,abs(su.sales_amt_no_discount_refund)
+      ,abs(su.sales_amt_refund)
       ,su.jc_unit
       ,su.jc_sale_sku_qty
-      ,su.jc_sale_sku_r_qty
+      ,abs(su.jc_sale_sku_r_qty)
       ,su.sales_unit
       ,su.xs_sale_sku_qty
-      ,su.xs_sale_sku_r_qty
+      ,abs(su.xs_sale_sku_r_qty)
       ,sc.unit_name                    as xg_unit
       ,su.jc_sale_sku_qty   / sc.scale as xg_sale_sku_qty
-      ,su.jc_sale_sku_r_qty / sc.scale as xg_sale_sku_r_qty
+      ,abs(su.jc_sale_sku_r_qty) / sc.scale as xg_sale_sku_r_qty
       ,su.sales_ord_cnt
       ,su.sales_ord_cnt_refund
       ,nvl(su.sales_ord_cnt,0) + nvl(su.sales_ord_cnt_refund,0)  as passenger_flow
