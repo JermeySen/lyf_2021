@@ -80,7 +80,7 @@ from (
                                                    and ssg.dt =  date_format(date_add(current_date(),-1),'yyyyMMdd')
                                                    and ssg.store_code = 'X001'   --取总仓成本价
      inner join dw.dim_warehouse wh on wh.real_warehouse_key = iso.real_warehouse_key
-     left  join temp.outwarehouse_0423 owh on owh.real_warehouse_key = iso.real_warehouse_key  -- 只计算切了中台仓库的库存
+     left  join dw.dim_warehouse_zt owh on owh.real_warehouse_key = iso.real_warehouse_key  -- 只计算切了中台仓库的库存
      where iso.dt =  date_format(date_add(current_date(),-1),'yyyy-MM-dd')
      and   iso.is_available = 1
 --      and   wh.real_warehouse_type <> 15    --虚拟仓
