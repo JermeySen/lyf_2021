@@ -8,6 +8,7 @@
 --日期：20210508
  */
 --**********************************修改
+--zengjiamin   20210513   销售单位区分业务，汇总销量改成基础销量,基础单位
 drop table if exists temp.result_amt;
 create table temp.result_amt as
 with amt as (
@@ -19,7 +20,9 @@ with amt as (
                   'return_receive_amt:',return_receive_amt,','
                   'return_actual_amt:' ,return_actual_amt,','
                   'pay_sku_amt:'       ,pay_sku_amt,','
-                  'return_sku_amt:'    ,return_sku_amt ) as str_amt
+                  'return_sku_amt:'    ,return_sku_amt,','
+                  'jc_unit:'           ,jc_unit_code
+                  ) as str_amt
             from (
                 select
                     reverse(a.sku_code||store_code||pay_date)                       as   id
@@ -27,8 +30,9 @@ with amt as (
                     ,cast(sum(nvl(sales_amt,0))             as string)              as actual_amt
                     ,cast(sum(nvl(abs(sales_amt_no_discount_refund),0)) as string)  as return_receive_amt
                     ,cast(sum(nvl(abs(sales_amt_refund),0))      as string)         as return_actual_amt
-                    ,cast(sum(nvl(xs_sale_sku_qty,0))       as string)              as pay_sku_amt
-                    ,cast(sum(nvl(abs(xs_sale_sku_r_qty),0))     as string)         as return_sku_amt
+                    ,cast(sum(nvl(jc_sale_sku_qty,0))       as string)              as pay_sku_amt
+                    ,cast(sum(nvl(abs(jc_sale_sku_r_qty),0))     as string)         as return_sku_amt
+                    ,max(a.jc_unit_code)                                            as jc_unit_code
                 from  dm.product_store_daily_analysis a
                 where a.dt >= date_format(date_add(current_date(),-1),'yyyy-MM-dd')
                  group by a.sku_code,a.store_code,a.pay_date
@@ -49,7 +53,7 @@ with amt as (
                                       , a.business_code,'&return_actual_amt:' ,cast(nvl(abs(sales_amt_refund),0) as string) ,','
                                       , a.business_code,'&pay_sku_amt:'       ,cast(nvl(xs_sale_sku_qty,0) as string)  ,','
                                       , a.business_code,'&return_sku_amt:'    ,cast(nvl(abs(xs_sale_sku_r_qty),0) as string)  ,','
-                                      , 'sale_unit:'                          ,xs_unit_code
+                                      , a.business_code,'&sale_unit:'         ,xs_unit_code
                                     )     as   str_business_amt
                         from  dm.product_store_daily_analysis a
                          where a.dt >= date_format(date_add(current_date(),-1),'yyyy-MM-dd')
