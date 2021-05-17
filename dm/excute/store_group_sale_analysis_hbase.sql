@@ -52,13 +52,13 @@ select
   store_key||pay_date   as   id
  ,order_no
  ,concat(  order_no,':'
-        ,'{pay_date:',pay_date
-        ,',introducer:',introducer
-        ,',receive_amt:',receive_amt
-        ,',actual_amt:',actual_amt
-        ,',discount_amt:',discount_amt
-        ,',return_receive_amt:',return_receive_amt
-        ,',return_actual_amt:',return_actual_amt,'}'
+        ,'{"pay_date":"',pay_date
+        ,'","introducer":"',introducer
+        ,'","receive_amt":"',receive_amt
+        ,'","actual_amt":"',actual_amt
+        ,'","discount_amt":"',discount_amt
+        ,'","return_receive_amt":"',return_receive_amt
+        ,'","return_actual_amt":"',return_actual_amt,'"}'
         ) str
 from result
 ) a
