@@ -193,6 +193,12 @@ key
 ,no_discount_refund_u_sales_amt
 ,refund_u_sales_amt
 ,u_saved_cnt
+,period_0_sale_amt
+,period_1_sale_amt
+,period_2_sale_amt
+,period_3_sale_amt
+,period_4_sale_amt
+,period_5_sale_amt
 ,period_6_sale_amt
 ,period_7_sale_amt
 ,period_8_sale_amt
@@ -274,6 +280,12 @@ a.key
 ,a.sales_amt_no_discount_refund_u
 ,a.sales_amt_refund_u
 ,a.saved_cnt_u
+,coalesce(b.period_0_sale_amt,0) as period_0_sale_amt
+,coalesce(b.period_1_sale_amt,0) as period_1_sale_amt
+,coalesce(b.period_2_sale_amt,0) as period_2_sale_amt
+,coalesce(b.period_3_sale_amt,0) as period_3_sale_amt
+,coalesce(b.period_4_sale_amt,0) as period_4_sale_amt
+,coalesce(b.period_5_sale_amt,0) as period_5_sale_amt
 ,coalesce(b.period_6_sale_amt,0) as period_6_sale_amt
 ,coalesce(b.period_7_sale_amt,0) as period_7_sale_amt
 ,coalesce(b.period_8_sale_amt,0) as period_8_sale_amt
@@ -298,6 +310,12 @@ from temp.ml_store_gripper_day a left join
 select
 a.store_key,
 a.date_key,
+sum(case when substr(payment_time,12,2)='00' then  a.actual_amount else 0.00 end) as period_0_sale_amt,--实收金额
+sum(case when substr(payment_time,12,2)='01' then  a.actual_amount else 0.00 end) as period_1_sale_amt,--实收金额
+sum(case when substr(payment_time,12,2)='02' then  a.actual_amount else 0.00 end) as period_2_sale_amt,--实收金额
+sum(case when substr(payment_time,12,2)='03' then  a.actual_amount else 0.00 end) as period_3_sale_amt,--实收金额
+sum(case when substr(payment_time,12,2)='04' then  a.actual_amount else 0.00 end) as period_4_sale_amt,--实收金额
+sum(case when substr(payment_time,12,2)='05' then  a.actual_amount else 0.00 end) as period_5_sale_amt,--实收金额
 sum(case when substr(payment_time,12,2)='06' then  a.actual_amount else 0.00 end) as period_6_sale_amt,--实收金额
 sum(case when substr(payment_time,12,2)='07' then  a.actual_amount else 0.00 end) as period_7_sale_amt,--实收金额
 sum(case when substr(payment_time,12,2)='08' then  a.actual_amount else 0.00 end) as period_8_sale_amt,--实收金额

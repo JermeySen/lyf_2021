@@ -3,7 +3,6 @@ create EXTERNAL table dm.store_daily_hbase(
 `key` string COMMENT '主键',
 `store_key` string COMMENT '门店编码',
 `store_name` string COMMENT '门店名称',
-
 `store_type` string COMMENT '门店类型',
 `store_status` string COMMENT '门店当日状态（正常营业/关店）',
 `close_date` string COMMENT '关店日期',
@@ -16,7 +15,6 @@ create EXTERNAL table dm.store_daily_hbase(
 `big_area_manager_name` string COMMENT '大区负责人姓名',
 `area_manager_code` string COMMENT '区域负责人工号',
 `area_manager_name` string COMMENT '区域负责人姓名',
-
 `date_key` string COMMENT '日期',
 `sale_amt` decimal(18,4) COMMENT '业绩（门店当天POS实收金额，等于门店零售+门店团购+社区团+外卖订单金额+地推+直播（扣除退款金额，来伊份APP外卖是线上实付金额，第三方外卖是过称金额））',
 `sale_amt_target` decimal(18,6) COMMENT '业绩目标',
@@ -38,7 +36,6 @@ create EXTERNAL table dm.store_daily_hbase(
 `ground_push_cnt_target` bigint COMMENT '地推订单量目标',
 `live_broadcast_cnt` bigint COMMENT '门店发起的直播场次（伊直播）',
 `live_broadcast_cnt_target` bigint COMMENT '门店发起直播场次目标',
-
 `no_discount_sales_amt` decimal(18,4) COMMENT '应收金额',
 `subsi_sales_amt` decimal(18,4) COMMENT '销售额（含补贴）',
 `discount_sales_amt` decimal(18,4) COMMENT '优惠金额',
@@ -73,6 +70,12 @@ create EXTERNAL table dm.store_daily_hbase(
 `no_discount_refund_u_sales_amt` decimal(18,4) COMMENT '悠点卡退款应收金额',
 `refund_u_sales_amt` decimal(18,4) COMMENT '悠点卡退款实收金额',
 `u_saved_cnt` int COMMENT '悠点卡充值次数'
+,period_0_sale_amt decimal(18,4) comment '时间段（0:00-0:59）的销售额'
+,period_1_sale_amt decimal(18,4) comment '时间段（1:00-1:59）的销售额'
+,period_2_sale_amt decimal(18,4) comment '时间段（2:00-2:59）的销售额'
+,period_3_sale_amt decimal(18,4) comment '时间段（3:00-3:59）的销售额'
+,period_4_sale_amt decimal(18,4) comment '时间段（4:00-4:59）的销售额'
+,period_5_sale_amt decimal(18,4) comment '时间段（5:00-5:59）的销售额'
 ,period_6_sale_amt decimal(18,4) comment '时间段（6:00-6:59）的销售额'
 ,period_7_sale_amt decimal(18,4) comment '时间段（7:00-7:59）的销售额'
 ,period_8_sale_amt decimal(18,4) comment '时间段（8:00-8:59）的销售额'
@@ -166,6 +169,12 @@ WITH SERDEPROPERTIES
 ,cf:no_discount_refund_u_sales_amt
 ,cf:refund_u_sales_amt
 ,cf:u_saved_cnt
+,cf:period_0_sale_amt
+,cf:period_1_sale_amt
+,cf:period_2_sale_amt
+,cf:period_3_sale_amt
+,cf:period_4_sale_amt
+,cf:period_5_sale_amt
 ,cf:period_6_sale_amt
 ,cf:period_7_sale_amt
 ,cf:period_8_sale_amt

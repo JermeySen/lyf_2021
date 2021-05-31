@@ -1,9 +1,18 @@
+/*
+商品额：商品的售价
+应收额：商品额-优惠额
+实收额：商品额-优惠额-退款额
+销售额：商品额-优惠额-退款额+补贴额
+
+app外卖  金额取线上 ，数量， 单位取线下。
+
+ */
 drop table dm.product_store_daily_analysis;
 CREATE TABLE `dm.product_store_daily_analysis`(
 `id`             string COMMENT '主键（sku编码+业务类型编码+门店编码+支付日期,如：1488001107U20210415）',
 `store_code`     string COMMENT '门店编码',
 `store_name`     string COMMENT '门店名称',
-`store_type`     string COMMENT '门店类型',
+`store_type`     string COMMENT '门店类型：直营，加盟',
 `is_open`        string COMMENT '门店是否营业（1是 0否）',
 `l2_company_code`  string COMMENT '二级子公司编码',
 `l2_company_name`  string COMMENT '二级子公司名称',
@@ -38,11 +47,11 @@ CREATE TABLE `dm.product_store_daily_analysis`(
 `category_four_code`    string COMMENT '四级类目code',
 `category_four_name`    string COMMENT '四级类目name',
 `pay_date`              string COMMENT '支付日期,格式：yyyyMMdd',
-`sales_amt_no_discount` decimal(18,2) COMMENT '应收金额',
-`sales_amt`             decimal(18,2) COMMENT '实收金额',
-`sales_amt_discount`    decimal(18,2) COMMENT '优惠金额',
-`sales_amt_no_discount_refund`      decimal(18,2) COMMENT '退款应收金额',
-`sales_amt_refund`                  decimal(18,2) COMMENT '退款实收金额',
+`sales_amt_no_discount` decimal(18,4) COMMENT '商品额——>商品额:商品原售价金额',
+`sales_amt`             decimal(18,4) COMMENT '实收金额——>商品额-优惠额-退款。补贴金额:（sku编码QT0001）补贴金额',
+`sales_amt_discount`    decimal(18,4) COMMENT '优惠金额',
+`sales_amt_no_discount_refund`      decimal(18,4) COMMENT '退款应收金额',
+`sales_amt_refund`                  decimal(18,4) COMMENT '退款实收金额',
 `jc_unit_code`          string        COMMENT '商品基础单位',
 `jc_sale_sku_qty`    	decimal(18,2) COMMENT '商品基础单位销量(正向)',
 `jc_sale_sku_r_qty`  	decimal(18,2) COMMENT '商品基础单位销量(逆向)',
@@ -54,7 +63,15 @@ CREATE TABLE `dm.product_store_daily_analysis`(
 `xg_sale_sku_r_qty`  	decimal(18,2) COMMENT '商品箱规单位销量(逆向)',
 `sales_ord_cnt`         int COMMENT '订单笔数(正向)',
 `sales_ord_cnt_refund`  int COMMENT '订单笔数(逆向)',
-`passenger_flow`        int COMMENT '客流（取正向订单数量+逆向订单数量，即：正逆向订单数量绝对值相加，均从POS上取数）',
+`passenger_flow`        int COMMENT '成交笔数（客流:正逆向订单数量绝对值相加，均从POS上取数）',  -- 备注修改
+-- *********************************************新增
+`company_code`         string COMMENT '子公司编码',
+`company_name`         string COMMENT '子公司名称',
+`channel_source`       string COMMENT '渠道编码',
+`channel_source_name`  string COMMENT '渠道编码名称',
+`sales_amt_receive`     decimal(18,4) COMMENT '应收额——>商品额-优惠额',
+
+
 `etl_updatetime`        timestamp  COMMENT 'etl时间'
 )
 PARTITIONED BY (
